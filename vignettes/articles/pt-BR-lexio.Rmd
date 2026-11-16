@@ -1,0 +1,241 @@
+---
+title: "Primeiros passos com o lexio"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+options(width = 100)
+```
+
+*Tradução de `vignette("lexio")`. Os nomes de funções, argumentos, arquivos e
+colunas são os do pacote, em inglês.*
+
+O `lexio` roda um modelo de insumo-produto resolvido por Goal Programming
+preemptivo (lexicográfico). Você declara uma base de insumo-produto que já
+tem e, para cada conta satélite (energia, emprego, emissões, ...), uma
+direção, uma meta e uma prioridade. O pacote escolhe a produção setorial que
+melhor atende às metas, na ordem de prioridade, em todas as ordens de
+prioridade, e grava todos os resultados.
+
+Este texto roda um exemplo completo numa base de três setores. Os outros
+textos tratam da especificação completa
+([Declarar dados e modelos](pt-BR-model-specification.html)), do exemplo de
+Goal Programming de Miller e Blair
+([O exemplo de Miller e Blair](pt-BR-miller-blair.html)) e da replicação da
+tese que apresentou o modelo
+([Replicar a tese](pt-BR-thesis-replication.html)).
+
+## O modelo
+
+Com `n` setores e `k` contas satélite, as metas formam o sistema
+
+$$
+G x + d^- - d^+ = g, \qquad
+G = \begin{bmatrix} D \\ I - A \end{bmatrix}, \qquad
+x,\ d^+,\ d^- \ge 0 .
+$$
+
+* `x` é a produção (valor bruto da produção) de cada setor, a variável de
+  decisão.
+* As `k` primeiras linhas são as contas satélite. `D` traz os coeficientes de
+  cada conta por unidade de produção, então `D_j x` é o nível da conta `j` e
+  `b_j = D_j x_0` é a sua base.
+* As `n` últimas linhas formam o bloco econômico, ECO: `(I - A) x` contra a
+  demanda final `f`.
+* `d^-` e `d^+` são os desvios abaixo e acima de cada meta `g`.
+
+Cada conta tem uma **direção**. Um piso (`">="`) penaliza a falta `d^-`, um
+teto (`"<="`) penaliza o excesso `d^+` e um alvo (`"="`) penaliza os dois. Por
+padrão, o ECO é um piso sobre a demanda final.
+
+As metas são atendidas em **ordem de prioridade**. Cada nível de prioridade é
+um programa linear, resolvido com o GLPK, que minimiza os desvios penalizados
+das suas metas; o seu ótimo fica então travado nos níveis seguintes. Como a
+ordem importa, o pacote roda, por padrão, todas as `k!` ordens das contas,
+com o ECO preso no último nível.
+
+Opcionalmente, um **corredor** limita os desvios econômicos:
+`d_h^-, d_h^+ <= alpha_h |g_h|`, em que `alpha_h` é uma proporção declarada
+para cada setor.
+
+## Uma primeira rodada
+
+### 1. Declarar a base
+
+A base tem três setores. `Z` traz os fluxos intermediários (linha = setor que
+vende, coluna = setor que compra), `x` o valor bruto da produção e `f` a
+demanda final. Cada conta satélite é dada pelo seu nível em cada setor: uma
+fonte de energia entrante `E` e uma incumbente `I` (em tep) e o trabalho
+`LAB` (em ocupações). `alpha` é o corredor de cada setor.
+
+```{r}
+library(lexio)
+
+Z <- matrix(c(10, 15, 5,
+              20, 10, 8,
+               5, 10, 6), nrow = 3, byrow = TRUE)
+x <- c(100, 80, 60)
+f <- c(70, 42, 39)
+E_entrant <- c(2, 4, 0.6)
+E_incumbent <- c(10, 16, 3)
+E_labour <- c(100, 40, 120)
+alpha <- c(0.10, 0.20, 0.15)
+sectors <- data.frame(code = c("S1", "S2", "S3"), name = c("Agriculture", "Industry", "Services"))
+```
+
+O `declare_io()` recebe cada objeto com o nome do que ele é: `Z =` para os
+fluxos (`A =` ou `B =` para coeficientes técnicos), `E =` para os níveis das
+contas (`D =` para coeficientes) e `corridor =` para o corredor. O pacote
+calcula `A = Z x^-1`, `B = I - A` e `D = E x^-1`.
+
+```{r}
+io <- declare_io(Z = Z, x = x, f = f,
+                 E = list(E = E_entrant, I = E_incumbent, LAB = E_labour),
+                 corridor = alpha, sectors = sectors)
+io
+```
+
+A impressão mostra como a base foi declarada, o modo do corredor e a base
+`b_j = D_j x` de cada conta. `validate_io(io)` dá o relatório completo das
+conferências de consistência.
+
+### 2. Declarar o modelo
+
+A energia entrante é um piso, a incumbente um teto e o trabalho um piso que
+deve crescer 5%. Dois cenários dão um choque igual a 5% da base conjunta das
+duas fontes de energia, à entrante ou à incumbente.
+
+```{r}
+shock <- list(type = "pooled_share", share = 0.05, pool = c("E", "I"))
+model <- define_model(
+  accounts = list(
+    E   = list(direction = ">=", target = list(type = "base"), label = "Entrant energy", unit = "toe"),
+    I   = list(direction = "<=", target = list(type = "base"), label = "Incumbent energy", unit = "toe"),
+    LAB = list(direction = ">=", target = list(type = "growth", rate = 0.05), label = "Labour", unit = "jobs")
+  ),
+  scenarios = list(E_shock = list(E = shock),
+                   I_shock = list(I = shock)),
+  name = "toy"
+)
+model
+```
+
+A meta de cada conta é calculada a partir da sua base. No cenário `E_shock`,
+a meta de `E` é `b_E + 0,05 (b_E + b_I)`, a meta de `I` é a sua base e a meta
+de `LAB` é `1,05 b_LAB`. As metas do bloco econômico são a demanda final. O
+`build_goals()` devolve o vetor `g` inteiro:
+
+```{r}
+build_goals(io, model, "E_shock")
+```
+
+Com três contas há `3! = 6` ordens, de `P01` a `P06`, cada uma com quatro
+níveis: as três contas, na sequência da ordem, e o ECO.
+
+### 3. Rodar
+
+```{r}
+res <- run_model(io, model, verbose = FALSE)
+res
+```
+
+O modelo rodou 12 vezes: 2 cenários e 6 ordens. Um *estado* é uma solução
+final `x*`; ordens diferentes podem levar ao mesmo estado.
+
+## Ler os resultados
+
+### No R
+
+`res$summary` traz quatro tabelas. `runs` tem uma linha por rodada: o status
+do GLPK em cada nível (`0` = ótimo), o ótimo `Z` de cada nível, a variação da
+produção total e a variação de cada conta.
+
+```{r}
+runs <- res$summary$runs[, c("scenario", "label", "priorities", "status", "Z1", "Z2", "Z3", "Z4",
+                             "delta_x", "delta_E", "delta_I", "delta_LAB", "state")]
+runs[5:12] <- round(runs[5:12], 4)
+runs
+```
+
+`levels` tem uma linha por nível de prioridade de cada rodada, `goals` uma
+linha por conta de cada rodada (base, meta, valor alcançado) e `states` uma
+linha por solução distinta.
+
+```{r}
+res$summary$goals[res$summary$goals$scenario == "E_shock",
+                  c("label", "account", "direction", "base", "g", "Gx", "realized")]
+```
+
+A impressão de uma rodada mostra cada nível e cada conta:
+
+```{r}
+res$runs[[3]]
+```
+
+### Em arquivos
+
+O `write_outputs()` grava todos os resultados numa pasta: um relatório
+(`README.md`), uma planilha Excel (`results.xlsx`), as tabelas em CSV e, para
+cada rodada, uma pasta com os resultados de cada nível.
+
+```{r}
+out <- file.path(tempdir(), "toy_results")
+write_outputs(res, out)
+list.files(out)
+list.files(file.path(out, "runs", "E_shock", "P03_I-E-LAB"))
+```
+
+O `all_levels.csv` tem uma linha por linha de `G` (as contas, depois os
+setores) e, lado a lado, a meta e o resultado de cada nível da rodada:
+
+```{r}
+read.csv(file.path(out, "runs", "E_shock", "P03_I-E-LAB", "all_levels.csv"))[, 1:13]
+```
+
+A notação segue o sistema acima: `xD_j` é o nível da conta `j` (`D_j x`) e
+`f'_h` é a linha `h` de `(I - A) x`, a produção líquida do setor `h`, cuja
+meta é a sua demanda final.
+
+### No Excel
+
+O `results.xlsx` (ou `write_excel(res, "arquivo.xlsx")`) traz os mesmos
+resultados numa só planilha:
+
+| Aba | Conteúdo |
+|---|---|
+| `about` | o modelo, os cenários, as ordens, a notação e o que cada aba traz |
+| `runs`, `levels`, `goals`, `states` | as quatro tabelas de resumo |
+| `final_<cenário>` | o último nível de todas as ordens, lado a lado: `g` e, de cada ordem, `Gx`, `d_minus`, `d_plus` e `x` |
+| `Gx_<cenário>` | `g`, o `Gx` de cada ordem e `Gx - g` |
+| `x_<cenário>` | a produção base `x0`, a produção `x*` de cada ordem e `delta_x` |
+| `<cenário>_<ordem>` | uma aba por rodada: cada linha de `G` em cada nível, lado a lado |
+
+```{r}
+readxl::excel_sheets(file.path(out, "results.xlsx"))
+```
+
+## O mesmo modelo a partir de arquivos
+
+Um estudo costuma ficar em arquivos: uma pasta com a base (ou uma planilha
+`.xlsx`) e um `model.yml` com o modelo. O `lexio_template()` grava este
+exemplo nesse formato, com um `model.yml` comentado, para ser copiado e
+preenchido com os seus dados.
+
+```{r}
+study <- file.path(tempdir(), "my_study")
+lexio_template(study)
+list.files(study, recursive = TRUE)
+res_files <- run_model(file.path(study, "model.yml"), verbose = FALSE)
+identical(res_files$summary$runs$Z4, res$summary$runs$Z4)
+```
+
+## Próximos passos
+
+* [Declarar dados e modelos](pt-BR-model-specification.html): todas as formas
+  de declarar os dados, as metas, os cenários e as prioridades; o corredor;
+  as saídas; e as cautelas numéricas do método.
+* [O exemplo de Miller e Blair](pt-BR-miller-blair.html): níveis com várias
+  metas e o bloco econômico no segundo nível.
+* [Replicar a tese](pt-BR-thesis-replication.html): o modelo aplicado aos
+  mercados brasileiros de eletricidade e de combustíveis, com a matriz de
+  insumo-produto de 2018.

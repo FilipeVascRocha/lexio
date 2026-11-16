@@ -1,0 +1,76 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it as below.
+type: software
+title: "lexio: Generalized Input-Output Model with Preemptive Goal Programming"
+version: 1.0.0
+date-released: "2026-11-16"
+authors:
+  - family-names: Rocha
+    given-names: Filipe Vasconcelos
+    email: filipvasconcelos1@gmail.com
+    affiliation: PPGE/UFJF
+    orcid: "https://orcid.org/0000-0002-0927-3799"
+license: MIT
+repository-code: "https://github.com/FilipeVascRocha/lexio"
+url: "https://filipevascrocha.github.io/lexio/"
+abstract: >-
+  An R package for input-output models solved by preemptive
+  (lexicographic) goal programming. The user declares an input-output
+  database (technical structure, gross output, final demand, any number of
+  satellite accounts as levels or coefficients and, optionally, a corridor
+  on the economic deviations, on both sides, only below or only above) and
+  the direction and goal of each account. Sectoral output is chosen to meet
+  the goals in priority order, written as G x + d- - d+ = g. Each priority
+  level is a linear program solved with GLPK, with the optima of the
+  earlier levels locked. By default all k! priority orders of the k
+  satellite accounts are run, with the economic block fixed at the last
+  level; the operator may list the orderings to run, with several weighted
+  goals per level, and move the economic block only by an explicit
+  declaration. Every level of every run is reported, in tables and in an
+  Excel workbook. The repository includes the replication of the doctoral
+  thesis that introduced the model, on the Brazilian fuel and electricity
+  markets with the 2018 input-output matrix with energy-sector detail
+  published by EPE in partnership with FIPE, and the goal programming
+  example of Miller and Blair.
+keywords:
+  - input-output
+  - goal programming
+  - lexicographic goal programming
+  - satellite accounts
+  - energy transition
+  - Brazil
+  - R
+references:
+  - type: thesis
+    title: "Modelo generalizado de insumo-produto com Goal Programming preemptivo aplicado à transição energética brasileira: eletricidade e combustíveis na estrutura produtiva de 2018"
+    authors:
+      - family-names: Rocha
+        given-names: Filipe Vasconcelos
+        orcid: "https://orcid.org/0000-0002-0927-3799"
+    institution:
+      name: "Programa de Pós-graduação em Economia, Universidade Federal de Juiz de Fora"
+    year: 2026
+  - type: book
+    title: "Input-Output Analysis: Foundations and Extensions"
+    authors:
+      - family-names: Miller
+        given-names: Ronald E.
+      - family-names: Blair
+        given-names: Peter D.
+    edition: "3rd"
+    publisher:
+      name: "Cambridge University Press"
+    year: 2022
+  - type: report
+    title: "Nota Técnica — Matriz Insumo Produto com detalhamento do setor energético: notas e tabelas auxiliares"
+    authors:
+      - name: "Empresa de Pesquisa Energética (EPE)"
+    year: 2026
+    url: "https://www.epe.gov.br/pt/publicacoes-dados-abertos/publicacoes/nota-tecnica-matriz-insumo-produto-com-detalhamento-do-setor-energetico-notas-e-tabelas-auxiliares"
+  - type: report
+    title: "Metodologia para construção de uma Matriz Insumo-Produto com detalhamento dos setores energéticos"
+    authors:
+      - name: "Empresa de Pesquisa Energética (EPE)"
+      - name: "Fundação Instituto de Pesquisas Econômicas (FIPE)"
+    year: 2023

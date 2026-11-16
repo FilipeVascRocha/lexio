@@ -1,0 +1,63 @@
+# The goal programming example of Miller and Blair, Input-Output Analysis
+# (3rd ed., 2022, section 13.8: equation 13.17, p. 645, and the unnumbered
+# structure of p. 648; 2nd ed., 2009, section 10.4: equation 10.15, p. 465,
+# and p. 469), as a lexio model. See
+# vignette("miller-blair", package = "lexio") for a step-by-step run and the
+# comparison with the printed solutions.
+#
+# BEFORE YOU RUN IT: the result of the first priority structure (book_1) is
+# NOT the one printed in the book. The book prints x = (21.25, 49.375), but
+# that point is not the lexicographic optimum: it meets the first two levels
+# and then leaves a larger excess coal use (1.875) than necessary. The
+# optimum is x* = (32, 44), with an excess of 0.8 (see the vignette).
+# The second structure (book_2) agrees with the book: x* = (10, 10).
+#
+# Two sectors, five satellite accounts declared as coefficients D (base/D.csv)
+# and no corridor (the model is free). The economic goals are the final demands
+# f' = (5, 10) of the book, not the final demand of the database.
+
+name: miller_blair
+data: base
+
+# Goals of the book: levels (type: level). "<=" penalizes the excess d+,
+# ">=" the shortfall d-.
+accounts:
+  OIL:
+    label: Oil use
+    direction: "<="
+    target: {type: level, value: 20}
+  COAL:
+    label: Coal use
+    direction: "<="
+    target: {type: level, value: 20}
+  SO2:
+    label: SO2 emissions
+    direction: "<="
+    target: {type: level, value: 16}
+  HC:
+    label: HC emissions
+    direction: "<="
+    target: {type: level, value: 20}
+  EMP:
+    label: Employment
+    direction: ">="
+    target: {type: level, value: 12}
+
+# Economic block ECO: (I - A) x >= f' = (5, 10).
+# The book puts the economic goals at the second level. In lexio, ECO is fixed
+# at the last level unless the operator declares otherwise: position: free is
+# that explicit declaration.
+economy:
+  direction: ">="
+  target: [5, 10]
+  position: free
+
+# The two priority structures of the book. A level with several goals
+# minimizes the sum of their deviations.
+#   book_1: P1 d5-, P2 d6- + d7-, P3 d1+ + d2+, P4 d3+ + d4+       (2022, eq. 13.17, p. 645)
+#   book_2: P1 d3+, P2 d6- + d7-, P3 d1+ + d2+, P4 d4+, P5 d5-     (2022, p. 648, no number)
+priorities:
+  book_1: [EMP, ECO, [OIL, COAL], [SO2, HC]]
+  book_2: [SO2, ECO, [OIL, COAL], HC, EMP]
+
+lock_tolerance: auto

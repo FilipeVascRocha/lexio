@@ -1,0 +1,26 @@
+# R
+.Rhistory
+.Rapp.history
+.RData
+.RDataTmp
+.Ruserdata
+.Rproj.user/
+*.Rcheck/
+/*.tar.gz
+.Renviron
+renv/library/
+renv/local/
+renv/staging/
+
+# Built vignettes and website
+/doc/
+/Meta/
+/docs/
+
+# Replication: data and outputs (the data are attached to the GitHub release)
+replication/thesis_data/
+replication/outputs*/
+replication/data/
+*.xlsx
+*.xls
+!inst/examples/toy/base.xlsx

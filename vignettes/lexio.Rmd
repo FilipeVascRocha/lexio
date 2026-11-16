@@ -1,0 +1,241 @@
+---
+title: "Get started with lexio"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Get started with lexio}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+options(width = 100)
+```
+
+`lexio` runs an input-output model solved by preemptive (lexicographic) goal
+programming. You declare an input-output database that you already have and,
+for each satellite account (energy, jobs, emissions, ...), a direction, a goal
+and a priority. The package chooses the sectoral output that best meets the
+goals, in priority order, for every ordering of the priorities, and writes
+every result.
+
+This vignette runs a complete example on a three-sector database. The other
+vignettes cover the full specification (`vignette("model-specification")`),
+the goal programming example of Miller and Blair
+(`vignette("miller-blair")`) and the replication of the thesis that
+introduced the model (`vignette("thesis-replication")`).
+
+## The model
+
+With `n` sectors and `k` satellite accounts, the goals form the system
+
+$$
+G x + d^- - d^+ = g, \qquad
+G = \begin{bmatrix} D \\ I - A \end{bmatrix}, \qquad
+x,\ d^+,\ d^- \ge 0 .
+$$
+
+* `x` is the gross output of each sector, the decision variable.
+* The first `k` rows are the satellite accounts. `D` holds the coefficients
+  of each account per unit of output, so `D_j x` is the level of account `j`
+  and `b_j = D_j x_0` is its base.
+* The last `n` rows are the economic block, ECO: `(I - A) x` against the
+  final demand `f`.
+* `d^-` and `d^+` are the deviations below and above each goal `g`.
+
+Each account has a **direction**. A floor (`">="`) penalizes the shortfall
+`d^-`, a ceiling (`"<="`) penalizes the excess `d^+`, and a target (`"="`)
+penalizes both. ECO is a floor on the final demand by default.
+
+The goals are met in **priority order**. Each priority level is a linear
+program, solved with GLPK, that minimizes the penalized deviations of its
+goals; its optimum is then locked for the following levels. Since the order
+matters, the package runs, by default, all `k!` orderings of the accounts,
+with ECO fixed at the last level.
+
+Optionally, a **corridor** bounds the economic deviations:
+`d_h^-, d_h^+ <= alpha_h |g_h|`, where `alpha_h` is a proportion declared for
+each sector.
+
+## A first run
+
+### 1. Declare the database
+
+The database has three sectors. `Z` holds the intermediate flows (row =
+selling sector, column = buying sector), `x` the gross output and `f` the
+final demand. Each satellite account is given as its level in each sector:
+an entrant energy source `E` and an incumbent `I` (in toe) and labour `LAB`
+(in jobs). `alpha` is the corridor of each sector.
+
+```{r}
+library(lexio)
+
+Z <- matrix(c(10, 15, 5,
+              20, 10, 8,
+               5, 10, 6), nrow = 3, byrow = TRUE)
+x <- c(100, 80, 60)
+f <- c(70, 42, 39)
+E_entrant <- c(2, 4, 0.6)
+E_incumbent <- c(10, 16, 3)
+E_labour <- c(100, 40, 120)
+alpha <- c(0.10, 0.20, 0.15)
+sectors <- data.frame(code = c("S1", "S2", "S3"), name = c("Agriculture", "Industry", "Services"))
+```
+
+`declare_io()` receives each object under the name of what it is: `Z =` for
+flows (`A =` or `B =` for technical coefficients), `E =` for levels of the
+accounts (`D =` for coefficients) and `corridor =` for the corridor. The
+package computes `A = Z x^-1`, `B = I - A` and `D = E x^-1`.
+
+```{r}
+io <- declare_io(Z = Z, x = x, f = f,
+                 E = list(E = E_entrant, I = E_incumbent, LAB = E_labour),
+                 corridor = alpha, sectors = sectors)
+io
+```
+
+The printout shows how the database was declared, the corridor mode and the
+base `b_j = D_j x` of each account. `validate_io(io)` gives the full report of
+the consistency checks.
+
+### 2. Declare the model
+
+The entrant energy is a floor, the incumbent energy a ceiling and labour a
+floor that should grow by 5%. Two scenarios give a shock equal to 5% of the
+joint base of the two energy sources, either to the entrant or to the
+incumbent.
+
+```{r}
+shock <- list(type = "pooled_share", share = 0.05, pool = c("E", "I"))
+model <- define_model(
+  accounts = list(
+    E   = list(direction = ">=", target = list(type = "base"), label = "Entrant energy", unit = "toe"),
+    I   = list(direction = "<=", target = list(type = "base"), label = "Incumbent energy", unit = "toe"),
+    LAB = list(direction = ">=", target = list(type = "growth", rate = 0.05), label = "Labour", unit = "jobs")
+  ),
+  scenarios = list(E_shock = list(E = shock),
+                   I_shock = list(I = shock)),
+  name = "toy"
+)
+model
+```
+
+The goal of each account is computed from its base. In the scenario
+`E_shock`, the goal of `E` is `b_E + 0.05 (b_E + b_I)`, the goal of `I` is
+its base and the goal of `LAB` is `1.05 b_LAB`. The goals of the economic
+block are the final demand. `build_goals()` returns the whole vector `g`:
+
+```{r}
+build_goals(io, model, "E_shock")
+```
+
+With three accounts there are `3! = 6` orderings, `P01` to `P06`, each with
+four levels: the three accounts in the order of the ordering, and ECO.
+
+### 3. Run
+
+```{r}
+res <- run_model(io, model, verbose = FALSE)
+res
+```
+
+The model ran 12 times: 2 scenarios and 6 orderings. A *state* is a final
+solution `x*`; different orderings may lead to the same state.
+
+## Reading the results
+
+### In R
+
+`res$summary` holds four tables. `runs` has one row per run: the GLPK status
+of each level (`0` = optimal), the optimum `Z` of each level, the change in
+total output and the change in each account.
+
+```{r}
+runs <- res$summary$runs[, c("scenario", "label", "priorities", "status", "Z1", "Z2", "Z3", "Z4",
+                             "delta_x", "delta_E", "delta_I", "delta_LAB", "state")]
+runs[5:12] <- round(runs[5:12], 4)
+runs
+```
+
+`levels` has one row per priority level of each run, `goals` one row per
+account of each run (base, goal, achieved value) and `states` one row per
+distinct solution.
+
+```{r}
+res$summary$goals[res$summary$goals$scenario == "E_shock",
+                  c("label", "account", "direction", "base", "g", "Gx", "realized")]
+```
+
+Printing a single run shows every level and every account:
+
+```{r}
+res$runs[[3]]
+```
+
+### In files
+
+`write_outputs()` writes every result to a folder: a report (`README.md`),
+an Excel workbook (`results.xlsx`), the tables as CSV files and, for each
+run, a folder with the results of every level.
+
+```{r}
+out <- file.path(tempdir(), "toy_results")
+write_outputs(res, out)
+list.files(out)
+list.files(file.path(out, "runs", "E_shock", "P03_I-E-LAB"))
+```
+
+`all_levels.csv` has one row per row of `G` (the accounts, then the sectors)
+and, side by side, the goal and the result of every level of the run:
+
+```{r}
+read.csv(file.path(out, "runs", "E_shock", "P03_I-E-LAB", "all_levels.csv"))[, 1:13]
+```
+
+The notation follows the system above: `xD_j` is the level of account `j`
+(`D_j x`) and `f'_h` is row `h` of `(I - A) x`, the net output of sector `h`,
+whose goal is its final demand.
+
+### In Excel
+
+`results.xlsx` (or `write_excel(res, "file.xlsx")`) holds the same results
+in one workbook:
+
+| Sheet | Content |
+|---|---|
+| `about` | the model, the scenarios, the orderings, the notation and what each sheet holds |
+| `runs`, `levels`, `goals`, `states` | the four summary tables |
+| `final_<scenario>` | the last level of every ordering, side by side: `g`, then `Gx`, `d_minus`, `d_plus` and `x` of each ordering |
+| `Gx_<scenario>` | `g`, the `Gx` of each ordering and `Gx - g` |
+| `x_<scenario>` | the base output `x0`, the output `x*` of each ordering and `delta_x` |
+| `<scenario>_<ordering>` | one sheet per run: every row of `G` at every level, side by side |
+
+```{r}
+readxl::excel_sheets(file.path(out, "results.xlsx"))
+```
+
+## The same model from files
+
+A study is usually kept in files: a folder with the database (or an `.xlsx`
+workbook) and a `model.yml` with the model. `lexio_template()` writes this
+example in that format, with a commented `model.yml`, to be copied and
+filled in with your own data.
+
+```{r}
+study <- file.path(tempdir(), "my_study")
+lexio_template(study)
+list.files(study, recursive = TRUE)
+res_files <- run_model(file.path(study, "model.yml"), verbose = FALSE)
+identical(res_files$summary$runs$Z4, res$summary$runs$Z4)
+```
+
+## Next steps
+
+* `vignette("model-specification")`: every form of declaring the data, the
+  goals, the scenarios and the priorities; the corridor; the outputs; and the
+  numerical caveats of the method.
+* `vignette("miller-blair")`: the goal programming example of Miller and
+  Blair, with several goals per level and the economic block at the second
+  level.
+* `vignette("thesis-replication")`: the model applied to the Brazilian
+  electricity and fuel markets, with the 2018 input-output matrix.

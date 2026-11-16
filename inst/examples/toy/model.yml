@@ -1,0 +1,90 @@
+# Example model of lexio: 3 sectors and 3 satellite accounts.
+# Copy this file (lexio::lexio_template) and replace the data and goals with
+# those of your own study. Paths are relative to the folder of this file.
+
+name: toy
+
+# The declared database: a folder of CSV files (sectors, Z, x, f, E and,
+# optionally, corridor or floor/ceiling) or an .xlsx workbook with these
+# sheets. Without a corridor file the model is free.
+data: base
+
+# Satellite accounts, in declaration order. The order defines the rows of G
+# and the numbering of the orderings (P01 = 1-2-3, P02 = 1-3-2, ...). Each
+# account must be a column of E (levels) or D (coefficients).
+#   direction: ">=" (floor: penalizes d-), "<=" (ceiling: penalizes d+) or "=" (both)
+#   target (b = base of the account, D x):
+#     {type: base}                                    g = b
+#     {type: growth, rate: r}                         g = b + b * r
+#     {type: pooled_share, share: s, pool: [A, B]}    g = b + (b_A + b_B) * s
+#     {type: delta, value: v}                         g = b + v
+#     {type: level, value: v}                         g = v
+#   weight (optional, default 1): only matters when goals share a level.
+accounts:
+  E:
+    label: Entrant energy
+    unit: toe
+    direction: ">="
+    target: {type: base}
+  I:
+    label: Incumbent energy
+    unit: toe
+    direction: "<="
+    target: {type: base}
+  LAB:
+    label: Labour
+    unit: jobs
+    direction: ">="
+    target: {type: growth, rate: 0.05}
+
+# Economic block ECO: one goal per sector. Target: the declared final demand
+# (final_demand), a list of values ([5, 10, ...]) or a CSV file (code, value).
+#   position:  last (default): ECO is fixed at the last level, the benchmark
+#              of the model (it absorbs the final impact); free: the operator
+#              may place ECO at another level of an explicit ordering, or let
+#              it enter the permutations.
+#   deviation: absolute (default): the sum of the deviations of
+#              the sectors, in currency units; relative: each deviation
+#              divided by |g_h|, so that 1% weighs the same in every sector.
+economy:
+  direction: ">="
+  target: final_demand
+  position: last
+  deviation: absolute
+
+# Corridor declared with the data: d- <= multiplier * alpha_floor * |g| and
+# d+ <= multiplier * alpha_ceiling * |g| on the economic goals.
+# use: false ignores it (free model).
+corridor:
+  use: true
+  multiplier: 1
+
+# Scenarios: each one replaces the goals (and, optionally, directions or
+# corridor) of some accounts. Every scenario runs in every ordering.
+scenarios:
+  E_shock:
+    E: {type: pooled_share, share: 0.05, pool: [E, I]}
+  I_shock:
+    I: {type: pooled_share, share: 0.05, pool: [E, I]}
+
+# Priorities. Without a declaration (or with "all") every ordering is run;
+# to run only some orderings, list them.
+#   all                      one level per account, all k! orders
+#   {permute: [[E, I], LAB]} all orders of the groups; a group is one level
+#                            with several goals
+#   explicit orderings: only these are run, for instance
+#     first:  [LAB, E, I]               (one account per level)
+#     second: [[E, I], LAB]             (E and I share the first level)
+# ECO is added as the last level. With economy: position: free, ECO may be
+# written at any level ([LAB, ECO, [E, I]]) and "all" also permutes it.
+priorities: all
+
+# Lock of the levels already solved.
+#   auto   (default) exact lock d_l == Z_l; only if GLPK
+#          reports a level as non-optimal (a numerical false infeasibility),
+#          the run is solved again with a relaxed lock
+#          d_l <= Z_l + t * max(1, |Z_l|), smallest t from 1e-12 to 1e-9.
+#          Relaxed runs are flagged in the outputs (precision cost: later
+#          levels may move by up to about 2e-4, relative).
+#   exact  only the exact lock.
+lock_tolerance: auto

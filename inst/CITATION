@@ -1,0 +1,33 @@
+bibentry(
+  bibtype = "Manual",
+  header = "To cite the package lexio, please use:",
+  title = "lexio: Generalized Input-Output Model with Preemptive Goal Programming",
+  author = person(given = "Filipe Vasconcelos", family = "Rocha",
+                  comment = c(ORCID = "0000-0002-0927-3799")),
+  year = "2026",
+  note = "R package version 1.0.0",
+  url = "https://github.com/FilipeVascRocha/lexio",
+  textVersion = paste(
+    "Rocha, F. V. (2026). lexio: Generalized Input-Output Model with Preemptive",
+    "Goal Programming. R package version 1.0.0. https://github.com/FilipeVascRocha/lexio"
+  )
+)
+
+bibentry(
+  bibtype = "PhdThesis",
+  header = "The model is described in:",
+  title = paste("Modelo generalizado de insumo-produto com Goal Programming preemptivo aplicado",
+                "à transição energética brasileira: eletricidade e combustíveis",
+                "na estrutura produtiva de 2018"),
+  author = person(given = "Filipe Vasconcelos", family = "Rocha",
+                  comment = c(ORCID = "0000-0002-0927-3799")),
+  school = paste("Programa de Pós-graduação em Economia,",
+                 "Universidade Federal de Juiz de Fora"),
+  year = "2026",
+  textVersion = paste(
+    "Rocha, F. V. (2026). Modelo generalizado de insumo-produto com Goal Programming",
+    "preemptivo aplicado à transição energética brasileira: eletricidade e",
+    "combustíveis na estrutura produtiva de 2018. Doctoral thesis, Programa de",
+    "Pós-graduação em Economia, Universidade Federal de Juiz de Fora."
+  )
+)

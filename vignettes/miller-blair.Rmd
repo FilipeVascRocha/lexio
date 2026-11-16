@@ -1,0 +1,200 @@
+---
+title: "The Miller and Blair example"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{The Miller and Blair example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+options(width = 100)
+```
+
+Miller and Blair (2022, section 13.8) illustrate goal programming in an
+input-output model with a two-sector economy and five satellite accounts, the
+economy of their Example 13.7. The second edition has the same example, with
+the same data and printed solutions (2009, section 10.4, Example 10.1). This
+vignette runs it with `lexio`. It is a free model (no corridor) with several
+goals per level and the economic goals at the second level.
+
+**The first priority structure of the book does not reproduce the printed
+solution.** For its first structure (eq. 13.17, p. 645; eq. 10.15, p. 465, in
+2009) the book prints `x = (21.25, 49.375)`. The lexicographic optimum, which
+`lexio` finds, is `x* = (32, 44)`. Section 4 shows why. The second structure
+(p. 648; p. 469 in 2009; unnumbered in both editions) agrees with the book:
+`x* = (10, 10)`.
+
+## 1. The data
+
+The flows `Z`, the gross output `x` and the final demand `f` give
+`A = [0.3 0.2; 0.1 0.7]`. The book gives the satellite accounts per unit of
+output, so they are declared as coefficients, with `D =`. No corridor is
+declared, so the model is free.
+
+```{r}
+library(lexio)
+
+Z <- matrix(c(3, 2,
+              1, 7), nrow = 2, byrow = TRUE)
+x <- c(10, 10)
+f <- c(5, 2)
+io <- declare_io(Z = Z, x = x, f = f,
+                 D = list(OIL = c(0.2, 0.3), COAL = c(0.1, 0.4), SO2 = c(0.5, 1.1),
+                          HC = c(0.7, 0.7), EMP = c(0.1, 0.2)),
+                 sectors = data.frame(code = c("I1", "I2"), name = c("Industry 1", "Industry 2")))
+io
+```
+
+## 2. Goals and priorities
+
+The goals are levels. Oil and coal use should not exceed 20, SO2 emissions
+16 and HC emissions 20 (ceilings, penalizing `d⁺_1` to `d⁺_4`); employment
+should reach 12 (a floor, penalizing `d⁻_5`). The economic goals are
+`(I − A) x ≥ f' = (5, 10)` (penalizing `d⁻_6` and `d⁻_7`), declared as the
+target of the economic block.
+
+The book puts the economic goals at the second level. In `lexio` the
+economic block is fixed at the last level unless the model declares
+otherwise; `position = "free"` is that declaration.
+
+```{r}
+level <- function(v) list(type = "level", value = v)
+accounts <- list(
+  OIL  = list(direction = "<=", target = level(20)),
+  COAL = list(direction = "<=", target = level(20)),
+  SO2  = list(direction = "<=", target = level(16)),
+  HC   = list(direction = "<=", target = level(20)),
+  EMP  = list(direction = ">=", target = level(12))
+)
+model <- define_model(
+  accounts = accounts,
+  economy = list(direction = ">=", target = c(5, 10), position = "free"),
+  priorities = list(
+    # eq. 13.17 (2022, p. 645): P1 d5-, P2 d6- + d7-, P3 d1+ + d2+, P4 d3+ + d4+
+    book_1 = list("EMP", "ECO", c("OIL", "COAL"), c("SO2", "HC")),
+    # 2022, p. 648 (no number): P1 d3+, P2 d6- + d7-, P3 d1+ + d2+, P4 d4+, P5 d5-
+    book_2 = list("SO2", "ECO", c("OIL", "COAL"), "HC", "EMP"),
+    # the first structure, one goal at a time, as in the figures of the book
+    one_at_a_time = list("EMP", "ECO", "OIL", "COAL", "SO2", "HC")
+  ),
+  name = "miller_blair"
+)
+model
+```
+
+The same model is in `system.file("examples", "miller_blair", "model.yml", package = "lexio")`,
+without the third ordering.
+
+## 3. Every stage of every run
+
+```{r}
+res <- run_model(io, model, verbose = FALSE)
+res
+```
+
+The table below shows, for each level of each run, its goals, its optimum
+`Z`, the GLPK status, the output `x` after the level and the value `G x` of
+every goal.
+
+```{r}
+stages <- function(r) {
+  do.call(rbind, lapply(seq_along(r$levels), function(l) {
+    lev <- r$levels[[l]]
+    gx <- stats::setNames(round(lev$gx, 4), c(names(accounts), "ECO_1", "ECO_2"))
+    data.frame(level = l, goals = r$order[l], Z = round(lev$objval, 4), status = lev$status_symbol,
+               x1 = round(lev$x[1], 4), x2 = round(lev$x[2], 4), as.list(gx), check.names = FALSE)
+  }))
+}
+for (r in res$runs) {
+  cat("\n", r$label, ": ", paste(r$order, collapse = " > "), "\n", sep = "")
+  print(stages(r), row.names = FALSE)
+}
+```
+
+## 4. The book and lexio, side by side
+
+The value of a priority level at a given output `x` is the sum of the
+penalized deviations of its goals. The function below computes it at any
+point, so the point printed in the book and the solution of `lexio` can be
+compared level by level.
+
+```{r}
+level_values <- function(x, levels) {
+  g <- build_goals(io, model)
+  Gx <- as.numeric(rbind(io$D, io$B) %*% x)
+  d_plus <- pmax(Gx - g, 0)
+  d_minus <- pmax(g - Gx, 0)
+  eco <- length(accounts) + seq_len(io$n)
+  vapply(levels, function(goals) {
+    sum(vapply(goals, function(a) {
+      if (a == "ECO") return(sum(d_minus[eco]))
+      i <- match(a, names(accounts))
+      if (accounts[[a]]$direction == "<=") d_plus[i] else d_minus[i]
+    }, numeric(1)))
+  }, numeric(1))
+}
+book <- list(book_1 = c(21.25, 49.375), book_2 = c(10, 10))
+for (o in names(book)) {
+  r <- res$runs[[match(o, vapply(res$runs, `[[`, character(1), "label"))]]
+  cat("\n", o, ": the book prints x = (", paste(book[[o]], collapse = ", "), "); lexio gives x* = (",
+      paste(round(r$x_star, 6), collapse = ", "), ")\n", sep = "")
+  print(data.frame(level = seq_along(r$order), goals = r$order,
+                   at_book_point = zapsmall(level_values(book[[o]], r$levels_goals), 10),
+                   at_lexio_point = zapsmall(level_values(r$x_star, r$levels_goals), 10),
+                   lexio_Z = zapsmall(r$Z, 10)), row.names = FALSE)
+}
+```
+
+In the second structure the two points coincide. In the first, both points
+meet the first two levels exactly: employment is 12 and the economic goals
+are met. After the second level, the solutions form the segment of the
+employment line `x_2 = 60 − 0.5 x_1` between `(21.25, 49.375)` and
+`(32, 44)`. Along that segment oil use stays below 20 and coal use is
+`24 − 0.1 x_1`, so the excess coal use `d⁺_2 = 4 − 0.1 x_1`, which enters the
+third level, is smallest at `(32, 44)`, where it is 0.8. The book prints the
+other end of the segment, where it is 1.875.
+
+The stages of `book_1` show the same thing: after level 2, GLPK stands on the
+point printed in the book; level 3 then moves the solution along the
+segment to `(32, 44)`, lowering the excess coal use from 1.875 to 0.8 without
+changing levels 1 and 2. Solving the goals one at a time (`one_at_a_time`)
+also gives `(32, 44)`. The package tests check the same optima with an
+independent implementation solved with lpSolve.
+
+## 5. All the orderings, with the economic block last
+
+Without a `priorities` declaration, `lexio` runs every ordering of the
+accounts, one account per level, with the economic block fixed at the last
+level: `5! = 120` orderings.
+
+```{r}
+model_all <- define_model(accounts, economy = list(direction = ">=", target = c(5, 10)),
+                          name = "miller_blair_all")
+res_all <- run_model(io, model_all, verbose = FALSE)
+res_all
+res_all$summary$states[, c("state", "n_runs", "delta_x", paste0("delta_", names(accounts)))]
+```
+
+## 6. Notes on the 2022 edition
+
+The example, the data and the printed solutions are the same as in 2009.
+Checking with GLPK, we also found:
+
+- typos: goals 13.14 to 13.16 are written as `≤ / minimize d⁺`, while the
+  matrix and equation 13.17 use `≥ / d⁻` (p. 645); equation 13.9 has the
+  sign `+d⁺_4` (p. 639);
+- section 13.8 calls the example "Example 13.1", its number in the 2009
+  edition (10.1); in 2022 the data are those of Example 13.7 (section
+  13.7.2), and Example 13.1 is another one (section 13.2.1);
+- a new linear programming illustration (section 13.8.1), with SO2 ≤ 15:
+  with employment ≥ 3 it is infeasible; without the employment row, the
+  optimum is `(9.770, 9.195)`, with `q = 6.782`, not the printed
+  `(8.846, 9.615)`, with `q = 6.269` (a point with employment 2.808).
+
+## Reference
+
+Miller, R. E. and Blair, P. D. (2022). *Input-Output Analysis: Foundations
+and Extensions.* 3rd ed. Cambridge University Press, section 13.8. Previous
+edition: 2nd ed., 2009, section 10.4.

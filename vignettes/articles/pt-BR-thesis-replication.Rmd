@@ -1,0 +1,167 @@
+---
+title: "Replicar a tese"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+*Tradução de `vignette("thesis-replication")`.*
+
+O modelo do `lexio` foi apresentado em Rocha (2026), que o aplica a dois
+mercados de energia do Brasil com a matriz de insumo-produto de 2018 com
+detalhamento do setor energético, publicada pela EPE e pela FIPE (72
+setores). Este texto mostra como essa aplicação é declarada e rodada. O
+código não roda na construção do texto, porque os dados são distribuídos à
+parte do pacote; a pasta `replication/` do repositório
+(<https://github.com/FilipeVascRocha/lexio>) roda tudo, como descreve o seu
+`README.pt-BR.md`.
+
+## A aplicação
+
+| Mercado | Entrante (`>=`) | Incumbente (`<=`) | Trabalho (`>=`) | Choque |
+|---|---|---|---|---|
+| Eletricidade | GD, geração distribuída | GC, geração centralizada | LAB, +1% | 1% de `b_GD + b_GC`, para a GD ou para a GC |
+| Combustíveis | CR, biodiesel + etanol | CNR, derivados de petróleo + gás natural | LAB, +5% | 5% de `b_CR + b_CNR`, para os CR ou para os CNR |
+
+- A energia entrante é um piso e a incumbente um teto: a entrante não deve
+  ficar abaixo da meta e a incumbente não deve passar da meta.
+- Cada cenário dá o choque a uma das duas fontes de energia; a outra fica na
+  base, e o trabalho cresce a fração do choque.
+- O bloco econômico é `(I − A) x ≥ f`, no último nível, com desvios
+  absolutos.
+- O corredor `α_h` é a compra intersetorial dos produtos energéticos do
+  mercado dividida pela produção do setor `h`, dos dois lados.
+- As seis ordens das três contas rodam em cada cenário, com a trava exata:
+  2 mercados × 2 cenários × 6 ordens = 24 rodadas de 4 níveis.
+
+## Os dados
+
+A base é o arquivo `lexio-thesis-data-2018.zip`, anexado à *release* do
+`lexio` no GitHub; o `replication/01_declare_data.R` monta os mesmos
+arquivos a partir da planilha pública da EPE. O arquivo traz também um
+dicionário de todos os arquivos e colunas (`thesis_data/metadata.xlsx`) e a
+própria planilha da EPE, sem alteração (`data/`), para que a base possa ser
+refeita mesmo que a planilha saia do site da EPE. Para cada mercado:
+
+```
+thesis_data/fuels/
+  base/            sectors, Z, x, f, E (níveis de CR, CNR e LAB) e corridor, como publicados
+  model.yml        o modelo, com as metas declaradas pelas suas regras
+  coefficients/    B = I - A, D, x, f e corridor, arredondados a 15 algarismos significativos
+  model_exact.yml  o mesmo modelo, com as metas arredondadas do mesmo jeito
+```
+
+A tese guardava os coeficientes e as metas com 15 algarismos significativos
+entre as suas etapas. `coefficients/` e `model_exact.yml` mantêm esse
+arredondamento, então o problema é idêntico ao resolvido na tese; `base/` e
+`model.yml` dão os mesmos números até cerca de 1e-9.
+
+## Declarar o modelo dos combustíveis no R
+
+Os coeficientes, lidos em vetores:
+
+```{r}
+library(lexio)
+dir <- "replication/thesis_data/fuels/coefficients"
+read_table <- function(name) {
+  read.csv(file.path(dir, paste0(name, ".csv")), check.names = FALSE, colClasses = c(code = "character"))
+}
+sectors <- read_table("sectors")
+B <- as.matrix(read_table("B")[, -1])
+x <- read_table("x")$value
+f <- read_table("f")$value
+D <- read_table("D")
+alpha <- read_table("corridor")$alpha
+
+io <- declare_io(B = B, x = x, f = f,
+                 D = list(CR = D$CR, CNR = D$CNR, LAB = D$LAB),
+                 corridor = alpha, sectors = sectors)
+io
+```
+
+O modelo: as direções, as metas dos dois cenários e as seis ordens.
+
+```{r}
+shock <- list(type = "pooled_share", share = 0.05, pool = c("CR", "CNR"))
+model <- define_model(
+  accounts = list(
+    CR  = list(direction = ">=", target = list(type = "base"), unit = "toe"),
+    CNR = list(direction = "<=", target = list(type = "base"), unit = "toe"),
+    LAB = list(direction = ">=", target = list(type = "growth", rate = 0.05), unit = "jobs")
+  ),
+  economy = list(direction = ">=", target = "final_demand", position = "last", deviation = "absolute"),
+  scenarios = list(CR = list(CR = shock), CNR = list(CNR = shock)),
+  priorities = "all",
+  corridor = list(use = TRUE, multiplier = 1),
+  lock_tolerance = "exact",
+  name = "thesis_fuels"
+)
+```
+
+A meta de cada conta é o seu nível total no cenário, não só o choque. Com as
+bases `b_CR = 19.882.543` tep, `b_CNR = 110.028.128` tep e
+`b_LAB = 97.776.839` ocupações, o choque é
+`0,05 × (b_CR + b_CNR) = 6.495.534` tep, e
+
+| Cenário | Meta de CR | Meta de CNR | Meta de LAB |
+|---|---|---|---|
+| `CR` | 26.378.077 (base + choque) | 110.028.128 (base) | 102.665.681 (base × 1,05) |
+| `CNR` | 19.882.543 (base) | 116.523.662 (base + choque) | 102.665.681 |
+
+`satellite_base(io)` e `build_goals(io, model, "CR")` devolvem esses números.
+
+## Rodar e ler os resultados
+
+```{r}
+res <- run_model(io, model)
+res
+write_outputs(res, "outputs_fuels")
+```
+
+O `results.xlsx`, na pasta de saída, traz todos os resultados. As suas abas
+de resultados têm uma linha por linha de `G`: `xD1`, `xD2` e `xD3` (CR, CNR e
+LAB) e `f'1` a `f'72` (os setores).
+
+| Resultado | Aba |
+|---|---|
+| o último nível das seis ordens, lado a lado (`g`; `Gx`, `d_minus`, `d_plus` e `x` de cada ordem) | `final_CR`, `final_CNR` |
+| cada nível (etapa) de uma ordem, lado a lado | `CR_P01` ... `CNR_P06` |
+| `Gx − g` | `Gx_CR`, `Gx_CNR` |
+| produção setorial `x*` e `Δx` | `x_CR`, `x_CNR` |
+| o ótimo de cada nível e a variação de cada conta | `runs` |
+| base, meta e valor alcançado de cada conta | `goals` |
+| os estados finais distintos | `states` |
+
+As ordens `P01` a `P06` são, nos combustíveis, CR-CNR-LAB, CR-LAB-CNR,
+CNR-CR-LAB, CNR-LAB-CR, LAB-CR-CNR e LAB-CNR-CR, cada uma seguida do bloco
+econômico.
+
+## Os números publicados
+
+O `replication/02_reproduce.R` roda os dois mercados com `coefficients/` e
+`model_exact.yml` e compara 12 indicadores com os valores impressos na tese:
+
+| Número | Publicado |
+|---|---|
+| Maior fração do choque realizada pela GD | 31,0% |
+| Maior fração do choque realizada pelos CR | 27,2% |
+| Comovimento na fronteira, GC por GD | 6,06 tep/tep |
+| Comovimento na fronteira, CNR por CR | 4,42 tep/tep |
+| Fronteira dos combustíveis: variação da produção | R$ 284,8 bilhões (2,39%) |
+| Fronteira dos combustíveis: variação das ocupações | 1,72 milhão |
+| Estado com os CNR na meta: variação da produção | R$ 254,4 bilhões (2,13%) |
+| Estado com os CNR na meta: variação das ocupações | 1,63 milhão |
+| Estados distintos: eletricidade, combustíveis | 5, 4 |
+
+O script termina com `12 of 12 published numbers match` e com todos os níveis
+das 24 rodadas ótimos. O modelo declarado acima, com as metas escritas como
+regras, dá os mesmos 9 números dos combustíveis.
+
+## Referência
+
+Rocha, F. V. (2026). *Modelo generalizado de insumo-produto com Goal
+Programming preemptivo aplicado à transição energética brasileira:
+eletricidade e combustíveis na estrutura produtiva de 2018.* Tese de
+doutorado, Programa de Pós-graduação em Economia, Universidade Federal de
+Juiz de Fora.

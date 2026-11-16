@@ -1,0 +1,59 @@
+url: https://filipevascrocha.github.io/lexio/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+
+reference:
+- title: Declare the database
+  contents:
+  - declare_io
+  - read_io
+  - write_io
+  - validate_io
+  - satellite_base
+  - example_io
+  - lexio_template
+- title: Define the model
+  contents:
+  - define_model
+  - read_model
+  - lex_permutations
+  - direction_type
+- title: Run
+  contents:
+  - run_model
+  - run_experiment
+- title: Results
+  contents:
+  - summarize_runs
+  - write_outputs
+  - write_excel
+- title: Building blocks
+  desc: The steps of a run, for users who want to inspect or extend them.
+  contents:
+  - build_goals
+  - build_lp
+  - solve_lexicographic
+- title: Package
+  contents:
+  - lexio-package
+
+articles:
+- title: Guides
+  navbar: Guides
+  contents:
+  - model-specification
+  - miller-blair
+  - thesis-replication
+- title: Em português
+  navbar: Em português
+  contents:
+  - articles/pt-BR-lexio
+  - articles/pt-BR-model-specification
+  - articles/pt-BR-miller-blair
+  - articles/pt-BR-thesis-replication

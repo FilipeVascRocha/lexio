@@ -1,0 +1,57 @@
+Package: lexio
+Type: Package
+Title: Generalized Input-Output Model with Preemptive Goal Programming
+Version: 1.0.0
+Authors@R:
+    person(given = "Filipe Vasconcelos", family = "Rocha",
+           email = "filipvasconcelos1@gmail.com",
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0002-0927-3799", affiliation = "PPGE/UFJF"))
+Description: A generalized input-output model solved by preemptive
+    (lexicographic) goal programming. The user declares an input-output
+    database (technical structure, gross output, final demand, any number
+    of satellite accounts and, optionally, a corridor that bounds the
+    economic deviations on both sides, only below or only above) and the
+    direction and goal of each account. Sectoral output is chosen to meet
+    the goals in priority order, written as G x + d- - d+ = g. Each priority
+    level is a linear program solved with GLPK, with the optima of the
+    earlier levels locked; a level may hold several goals. By default all
+    k! orders of the k satellite accounts are run, with the economic block
+    fixed at the last level; the operator may list the orderings to run
+    and, by an explicit declaration, move the economic block. The economic
+    deviations can be absolute or relative to each goal. Every level of
+    every run is reported, in tables and in an Excel workbook. The method
+    follows Rocha (2026, doctoral thesis, Federal University of Juiz de
+    Fora); the package includes the goal programming example of Miller and
+    Blair (2022).
+License: MIT + file LICENSE
+URL: https://github.com/FilipeVascRocha/lexio,
+    https://filipevascrocha.github.io/lexio/
+BugReports: https://github.com/FilipeVascRocha/lexio/issues
+Encoding: UTF-8
+Language: en-US
+Depends:
+    R (>= 4.0.0)
+Imports:
+    digest,
+    readxl,
+    ROI (>= 1.0-1),
+    ROI.plugin.glpk (>= 1.0-0),
+    stats,
+    tools,
+    utils,
+    writexl,
+    yaml
+Suggests:
+    here,
+    knitr,
+    lpSolve,
+    pkgload,
+    Rglpk,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/Needs/website: pkgdown
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
