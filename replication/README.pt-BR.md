@@ -40,9 +40,11 @@ com 4 níveis de prioridade.
 Os scripts leem `replication/thesis_data/`. O primeiro script que você rodar
 baixa a pasta, se ela não existir: é o arquivo `lexio-thesis-data-2018.zip`,
 anexado à *release* v1.0.0 do `lexio`
-(<https://github.com/FilipeVascRocha/lexio/releases/tag/v1.0.0>),
-descompactado nesta pasta. O script confere o SHA-256 do arquivo e para se
-ele não for o de baixo.
+(<https://github.com/FilipeVascRocha/lexio/releases/tag/v1.0.0>) e arquivado
+no Zenodo (<https://doi.org/10.5281/zenodo.24293808>), descompactado nesta
+pasta. O script baixa o arquivo do GitHub e, se não conseguir, do Zenodo;
+ele confere o SHA-256 do arquivo e não descompacta nada se não for o de
+baixo.
 
 - SHA-256 do `lexio-thesis-data-2018.zip`:
   `36e109d140be7661554b857385d836fa8e3831317377e8cc1f134d9cb60f3ecc`.

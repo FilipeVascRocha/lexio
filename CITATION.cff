@@ -3,7 +3,8 @@ message: >-
   If you use this software, please cite it as below.
 type: software
 title: "lexio: Generalized Input-Output Model with Preemptive Goal Programming"
-version: 1.0.0
+version: 1.0.1
+doi: 10.5281/zenodo.24293765
 date-released: "2026-11-16"
 authors:
   - family-names: Rocha
@@ -12,6 +13,13 @@ authors:
     affiliation: PPGE/UFJF
     orcid: "https://orcid.org/0000-0002-0927-3799"
 license: MIT
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24293765
+    description: "The package, all versions (Zenodo)"
+  - type: doi
+    value: 10.5281/zenodo.24293808
+    description: "The database of the thesis, used in replication/ (Zenodo)"
 repository-code: "https://github.com/FilipeVascRocha/lexio"
 url: "https://filipevascrocha.github.io/lexio/"
 abstract: >-
@@ -74,3 +82,14 @@ references:
       - name: "Empresa de Pesquisa Energética (EPE)"
       - name: "Fundação Instituto de Pesquisas Econômicas (FIPE)"
     year: 2023
+  - type: data
+    title: "Database of the thesis, declared for the lexio package: Brazil, 2018 input-output matrix with energy-sector detail (fuels and electricity)"
+    authors:
+      - family-names: Rocha
+        given-names: Filipe Vasconcelos
+        orcid: "https://orcid.org/0000-0002-0927-3799"
+    version: 1.0.0
+    year: 2026
+    doi: 10.5281/zenodo.24293808
+    publisher:
+      name: Zenodo

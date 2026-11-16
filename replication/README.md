@@ -40,9 +40,11 @@ each with 4 priority levels.
 The scripts read `replication/thesis_data/`. The first script you run
 downloads it if it is missing: it is the file `lexio-thesis-data-2018.zip`,
 attached to the release v1.0.0 of `lexio`
-(<https://github.com/FilipeVascRocha/lexio/releases/tag/v1.0.0>), unzipped in
-this folder. The script checks the SHA-256 of the file and stops if it is not
-the one below.
+(<https://github.com/FilipeVascRocha/lexio/releases/tag/v1.0.0>) and archived
+on Zenodo (<https://doi.org/10.5281/zenodo.24293808>), unzipped in this
+folder. The script downloads it from GitHub and, if that fails, from Zenodo;
+it checks the SHA-256 of the file and unzips nothing if it is not the one
+below.
 
 - SHA-256 of `lexio-thesis-data-2018.zip`:
   `36e109d140be7661554b857385d836fa8e3831317377e8cc1f134d9cb60f3ecc`.

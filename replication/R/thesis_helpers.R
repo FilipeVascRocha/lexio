@@ -11,35 +11,48 @@
 # eletricidade e combustíveis na estrutura produtiva de 2018. Doctoral thesis,
 # Programa de Pós-graduação em Economia, Universidade Federal de Juiz de Fora.
 
-# The data are the attachment of the release v1.0.0, whatever the latest
-# release is; the file is checked against its SHA-256 before use.
-data_url <- "https://github.com/FilipeVascRocha/lexio/releases/download/v1.0.0/lexio-thesis-data-2018.zip"
+# The data: the attachment of the release v1.0.0, whatever the latest release
+# is, and the same file archived on Zenodo (doi:10.5281/zenodo.24293808),
+# used when the first one cannot be downloaded. The file is checked against
+# its SHA-256 before use.
+data_urls <- c(
+  github = "https://github.com/FilipeVascRocha/lexio/releases/download/v1.0.0/lexio-thesis-data-2018.zip",
+  zenodo = "https://zenodo.org/records/24293808/files/lexio-thesis-data-2018.zip?download=1"
+)
 data_sha256 <- "36e109d140be7661554b857385d836fa8e3831317377e8cc1f134d9cb60f3ecc"
 
-# The folder replication/thesis_data. If it is missing, the attachment of the
-# GitHub release is downloaded, checked and unzipped there.
+# The folder replication/thesis_data. If it is missing, the data are
+# downloaded from the first source that gives the right file (SHA-256), and
+# unzipped there; nothing is unzipped from a file that does not match.
 thesis_data_dir <- function(replication_dir) {
   dir <- file.path(replication_dir, "thesis_data")
   if (dir.exists(file.path(dir, "fuels")) && dir.exists(file.path(dir, "electricity"))) return(dir)
   zip_file <- file.path(tempdir(), "lexio-thesis-data-2018.zip")
-  message("replication/thesis_data not found; downloading ", data_url)
-  ok <- tryCatch({
-    utils::download.file(data_url, zip_file, mode = "wb", quiet = TRUE)
-    TRUE
-  }, error = function(e) FALSE, warning = function(w) FALSE)
-  if (!ok) {
-    stop("could not download the data. Download lexio-thesis-data-2018.zip from ",
-         "https://github.com/FilipeVascRocha/lexio/releases/tag/v1.0.0 and unzip it in replication/, ",
-         "or build the data with replication/01_declare_data.R.", call. = FALSE)
+  problems <- character(0)
+  for (url in data_urls) {
+    message("replication/thesis_data not found; downloading ", url)
+    ok <- tryCatch({
+      utils::download.file(url, zip_file, mode = "wb", quiet = TRUE)
+      TRUE
+    }, error = function(e) FALSE, warning = function(w) FALSE)
+    if (!ok) {
+      problems <- c(problems, paste0(url, ": could not download"))
+      next
+    }
+    sha <- digest::digest(zip_file, algo = "sha256", file = TRUE)
+    if (!identical(sha, data_sha256)) {
+      problems <- c(problems, paste0(url, ": the file has SHA-256 ", sha, ", not ", data_sha256))
+      next
+    }
+    message("SHA-256 checked: ", sha)
+    utils::unzip(zip_file, exdir = replication_dir)
+    return(dir)
   }
-  sha <- digest::digest(zip_file, algo = "sha256", file = TRUE)
-  if (!identical(sha, data_sha256)) {
-    stop("the downloaded file has SHA-256 ", sha, ", not ", data_sha256, " (the data of the thesis); ",
-         "nothing was unzipped.", call. = FALSE)
-  }
-  message("SHA-256 checked: ", sha)
-  utils::unzip(zip_file, exdir = replication_dir)
-  dir
+  stop("could not get the data of the thesis; nothing was unzipped.\n",
+       paste0("  ", problems, collapse = "\n"),
+       "\nDownload lexio-thesis-data-2018.zip from https://github.com/FilipeVascRocha/lexio/releases/tag/v1.0.0 ",
+       "or https://doi.org/10.5281/zenodo.24293808 and unzip it in replication/, or build the data with ",
+       "replication/01_declare_data.R.", call. = FALSE)
 }
 
 # A new folder <base>, or <base>_2, <base>_3, ... if it exists.

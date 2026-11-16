@@ -1,7 +1,7 @@
 Package: lexio
 Type: Package
 Title: Generalized Input-Output Model with Preemptive Goal Programming
-Version: 1.0.0
+Version: 1.0.1
 Authors@R:
     person(given = "Filipe Vasconcelos", family = "Rocha",
            email = "filipvasconcelos1@gmail.com",

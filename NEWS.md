@@ -1,3 +1,13 @@
+# lexio 1.0.1
+
+* The package and the database of the thesis are archived on Zenodo, with
+  DOIs: the package, all versions, 10.5281/zenodo.24293765; the database,
+  10.5281/zenodo.24293808. They are now in `citation("lexio")`,
+  `CITATION.cff` and the README.
+* Replication: when `replication/thesis_data` is missing, the scripts download
+  the database from the GitHub release and, if that fails, from its Zenodo
+  record; the SHA-256 of the file is checked in both cases.
+
 # lexio 1.0.0
 
 First public release.

@@ -5,11 +5,14 @@ bibentry(
   author = person(given = "Filipe Vasconcelos", family = "Rocha",
                   comment = c(ORCID = "0000-0002-0927-3799")),
   year = "2026",
-  note = "R package version 1.0.0",
+  note = sprintf("R package version %s", meta$Version),
+  publisher = "Zenodo",
+  doi = "10.5281/zenodo.24293765",
   url = "https://github.com/FilipeVascRocha/lexio",
-  textVersion = paste(
-    "Rocha, F. V. (2026). lexio: Generalized Input-Output Model with Preemptive",
-    "Goal Programming. R package version 1.0.0. https://github.com/FilipeVascRocha/lexio"
+  textVersion = paste0(
+    "Rocha, F. V. (2026). lexio: Generalized Input-Output Model with Preemptive ",
+    "Goal Programming. R package version ", meta$Version, ". Zenodo. ",
+    "https://doi.org/10.5281/zenodo.24293765"
   )
 )
 
@@ -29,5 +32,24 @@ bibentry(
     "preemptivo aplicado à transição energética brasileira: eletricidade e",
     "combustíveis na estrutura produtiva de 2018. Doctoral thesis, Programa de",
     "Pós-graduação em Economia, Universidade Federal de Juiz de Fora."
+  )
+)
+
+bibentry(
+  bibtype = "Misc",
+  header = "The database of the thesis, used in replication/, is:",
+  title = paste("Database of the thesis, declared for the lexio package: Brazil, 2018",
+                "input-output matrix with energy-sector detail (fuels and electricity)"),
+  author = person(given = "Filipe Vasconcelos", family = "Rocha",
+                  comment = c(ORCID = "0000-0002-0927-3799")),
+  year = "2026",
+  note = "Dataset, version 1.0.0",
+  howpublished = "Zenodo",
+  doi = "10.5281/zenodo.24293808",
+  textVersion = paste(
+    "Rocha, F. V. (2026). Database of the thesis, declared for the lexio package:",
+    "Brazil, 2018 input-output matrix with energy-sector detail (fuels and",
+    "electricity) (Version 1.0.0) [Dataset]. Zenodo.",
+    "https://doi.org/10.5281/zenodo.24293808"
   )
 )
