@@ -9,7 +9,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/FilipeVascRocha/lexio/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/FilipeVascRocha/lexio/blob/v1.0.0/inst/CITATION)
 
 Rocha, F. V. (2026). lexio: Generalized Input-Output Model with
 Preemptive Goal Programming. R package version 1.0.0.
