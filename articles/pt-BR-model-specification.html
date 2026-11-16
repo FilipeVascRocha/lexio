@@ -1103,7 +1103,11 @@ dos dados da ordem de 1e-16. A mesma base gravada com 15 ou com 17
 algarismos significativos dá os mesmos números até cerca de 1e-10, mas
 pode mudar o status de rodadas no limite. Para resultados idênticos bit
 a bit, use entradas idênticas bit a bit; o <code><a href="../reference/write_io.html">write_io()</a></code> grava
-a menor representação decimal exata de cada número.</p>
+a menor representação decimal exata de cada número. Nos Macs com
+processador da Apple, o próprio R pode ler um número gravado com 16 ou
+17 algarismos significativos com uma diferença no último bit; números
+com até 15 algarismos significativos, como os coeficientes da tese, são
+lidos exatamente em qualquer sistema.</p>
 </div>
 <div class="section level3">
 <h3 id="ótimos-alternativos">7.3. Ótimos alternativos<a class="anchor" aria-label="anchor" href="#%C3%B3timos-alternativos"></a>

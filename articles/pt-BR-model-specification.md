@@ -602,7 +602,11 @@ algarismos significativos dá os mesmos números até cerca de 1e-10, mas
 pode mudar o status de rodadas no limite. Para resultados idênticos bit
 a bit, use entradas idênticas bit a bit; o
 [`write_io()`](https://filipevascrocha.github.io/lexio/reference/write_io.md)
-grava a menor representação decimal exata de cada número.
+grava a menor representação decimal exata de cada número. Nos Macs com
+processador da Apple, o próprio R pode ler um número gravado com 16 ou
+17 algarismos significativos com uma diferença no último bit; números
+com até 15 algarismos significativos, como os coeficientes da tese, são
+lidos exatamente em qualquer sistema.
 
 ### 7.3. Ótimos alternativos
 

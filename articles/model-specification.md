@@ -596,7 +596,11 @@ with 17 significant digits gives the same numbers up to about 1e-10, but
 may change the status of borderline runs. For bit-identical results, use
 bit-identical inputs;
 [`write_io()`](https://filipevascrocha.github.io/lexio/reference/write_io.md)
-writes the shortest exact decimal representation of each number.
+writes the shortest exact decimal representation of each number. On Macs
+with Apple silicon, R itself may read a number written with 16 or 17
+significant digits with a difference in the last bit; numbers with up to
+15 significant digits, such as the coefficients of the thesis, are read
+exactly everywhere.
 
 ### 7.3. Alternative optima
 

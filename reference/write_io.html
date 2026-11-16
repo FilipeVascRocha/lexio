@@ -82,6 +82,15 @@ significant digits). The objects are written as they were declared: <code>Z</cod
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>dir</code>, invisibly.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Reading the files back gives the same numbers, bit for bit, where R reads
+decimal numbers with extended precision (Windows, Linux and Intel Macs). On
+Macs with Apple silicon, R itself may read a number written with 16 or 17
+significant digits with a difference in the last bit (about 1e-16,
+relative); numbers with up to 15 significant digits are read exactly
+everywhere.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

@@ -26,3 +26,12 @@ write_io(io, dir)
 ## Value
 
 `dir`, invisibly.
+
+## Details
+
+Reading the files back gives the same numbers, bit for bit, where R
+reads decimal numbers with extended precision (Windows, Linux and Intel
+Macs). On Macs with Apple silicon, R itself may read a number written
+with 16 or 17 significant digits with a difference in the last bit
+(about 1e-16, relative); numbers with up to 15 significant digits are
+read exactly everywhere.
