@@ -1,0 +1,16 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  lexio: lexio.html
+  miller-blair: miller-blair.html
+  model-specification: model-specification.html
+  articles/pt-BR-lexio: pt-BR-lexio.html
+  articles/pt-BR-miller-blair: pt-BR-miller-blair.html
+  articles/pt-BR-model-specification: pt-BR-model-specification.html
+  articles/pt-BR-thesis-replication: pt-BR-thesis-replication.html
+  thesis-replication: thesis-replication.html
+last_built: 2026-11-16T21:10Z
+urls:
+  reference: https://filipevascrocha.github.io/lexio/reference
+  article: https://filipevascrocha.github.io/lexio/articles
