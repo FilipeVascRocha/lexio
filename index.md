@@ -85,11 +85,28 @@ with energy-sector detail published by EPE. See its
 citation("lexio")
 ```
 
+The package is archived on Zenodo. The DOI below covers all versions;
+each version also has its own DOI, listed on the Zenodo page, which pins
+the exact code you used:
+
+Rocha, F. V. (2026). *lexio: Generalized Input-Output Model with
+Preemptive Goal Programming* (Version 1.0.1). Zenodo.
+<https://doi.org/10.5281/zenodo.24293765>
+
+The model is described in:
+
 Rocha, F. V. (2026). *Modelo generalizado de insumo-produto com Goal
 Programming preemptivo aplicado à transição energética brasileira:
 eletricidade e combustíveis na estrutura produtiva de 2018.* Doctoral
 thesis, Programa de Pós-graduação em Economia, Universidade Federal de
 Juiz de Fora.
+
+The database of the thesis, used in `replication/`:
+
+Rocha, F. V. (2026). *Database of the thesis, declared for the lexio
+package: Brazil, 2018 input-output matrix with energy-sector detail
+(fuels and electricity)* (Version 1.0.0) \[Dataset\]. Zenodo.
+<https://doi.org/10.5281/zenodo.24293808>
 
 ## Contributing
 

@@ -33,11 +33,13 @@ described in its `README.md`.
 ## The data
 
 The database is the file `lexio-thesis-data-2018.zip`, attached to the
-GitHub release of `lexio`; `replication/01_declare_data.R` builds the
-same files from the public workbook of EPE. The file also holds a
-dictionary of every file and column (`thesis_data/metadata.xlsx`) and
-the EPE workbook itself, unchanged (`data/`), so that the database can
-be rebuilt even if the workbook leaves the EPE site. For each market:
+GitHub release of `lexio` and archived on Zenodo
+(<https://doi.org/10.5281/zenodo.24293808>);
+`replication/01_declare_data.R` builds the same files from the public
+workbook of EPE. The file also holds a dictionary of every file and
+column (`thesis_data/metadata.xlsx`) and the EPE workbook itself,
+unchanged (`data/`), so that the database can be rebuilt even if the
+workbook leaves the EPE site. For each market:
 
     thesis_data/fuels/
       base/            sectors, Z, x, f, E (levels of CR, CNR and LAB) and corridor, as published

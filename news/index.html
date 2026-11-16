@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lexio</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,9 +44,14 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/FilipeVascRocha/lexio/blob/v1.0.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/FilipeVascRocha/lexio/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.1" id="lexio-101">lexio 1.0.1<a class="anchor" aria-label="anchor" href="#lexio-101"></a></h2>
+<ul><li>The package and the database of the thesis are archived on Zenodo, with DOIs: the package, all versions, 10.5281/zenodo.24293765; the database, 10.5281/zenodo.24293808. They are now in <code>citation("lexio")</code>, <code>CITATION.cff</code> and the README.</li>
+<li>Replication: when <code>replication/thesis_data</code> is missing, the scripts download the database from the GitHub release and, if that fails, from its Zenodo record; the SHA-256 of the file is checked in both cases.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="lexio-100">lexio 1.0.0<a class="anchor" aria-label="anchor" href="#lexio-100"></a></h2>
 <p>First public release.</p>
@@ -60,7 +65,8 @@
 <code><a href="../reference/write_outputs.html">write_outputs()</a></code> writes a report, CSV tables of every level of every run and an Excel workbook; <code><a href="../reference/write_excel.html">write_excel()</a></code> writes the workbook alone.</li>
 <li>Vignettes: getting started, declaring data and models, the goal programming example of Miller and Blair, and the replication of the thesis. Portuguese translations are on the package website.</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

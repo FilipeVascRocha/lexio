@@ -33,12 +33,13 @@ seu `README.pt-BR.md`.
 ## Os dados
 
 A base é o arquivo `lexio-thesis-data-2018.zip`, anexado à *release* do
-`lexio` no GitHub; o `replication/01_declare_data.R` monta os mesmos
-arquivos a partir da planilha pública da EPE. O arquivo traz também um
-dicionário de todos os arquivos e colunas (`thesis_data/metadata.xlsx`)
-e a própria planilha da EPE, sem alteração (`data/`), para que a base
-possa ser refeita mesmo que a planilha saia do site da EPE. Para cada
-mercado:
+`lexio` no GitHub e arquivado no Zenodo
+(<https://doi.org/10.5281/zenodo.24293808>); o
+`replication/01_declare_data.R` monta os mesmos arquivos a partir da
+planilha pública da EPE. O arquivo traz também um dicionário de todos os
+arquivos e colunas (`thesis_data/metadata.xlsx`) e a própria planilha da
+EPE, sem alteração (`data/`), para que a base possa ser refeita mesmo
+que a planilha saia do site da EPE. Para cada mercado:
 
     thesis_data/fuels/
       base/            sectors, Z, x, f, E (níveis de CR, CNR e LAB) e corridor, como publicados
